@@ -93,6 +93,12 @@ button:hover {
   transform: translateY(-1px);
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  transform: none;
+}
+
 .primary-button {
   background: #4f46e5;
   color: #ffffff;
@@ -106,6 +112,13 @@ button:hover {
 .danger-button {
   background: #fee2e2;
   color: #b91c1c;
+}
+
+.field-error {
+  margin: -0.75rem 0 1rem;
+  color: #b91c1c;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 .empty-state {
