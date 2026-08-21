@@ -1,5 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
-import { FormField, form, required, submit } from '@angular/forms/signals';
+import { FormField, FormRoot, form, required, submit } from '@angular/forms/signals';
 
 type TodoItem = {
   id: number;
@@ -20,7 +20,7 @@ const seedTodos: TodoItem[] = [
 
 @Component({
   selector: 'app-todo-demo-page',
-  imports: [FormField],
+  imports: [FormField, FormRoot],
   template: `
     <main class="todo-demo-page">
       <section class="todo-panel" aria-labelledby="todo-demo-title">
@@ -35,7 +35,7 @@ const seedTodos: TodoItem[] = [
           </div>
         </header>
 
-        <form class="todo-form" (submit)="handleSubmit($event)">
+        <form class="todo-form" [formRoot]="todoForm">
           <label class="sr-only" for="todo-input">Todo item</label>
           <input
             id="todo-input"
@@ -95,44 +95,58 @@ const seedTodos: TodoItem[] = [
 export class TodoDemoPage {
   readonly todos = signal<TodoItem[]>(seedTodos);
   readonly draftModel = signal<TodoDraft>({ title: '' });
-  readonly todoForm = form(this.draftModel, (schema) => {
-    required(schema.title, { message: 'Task title is required' });
-  });
+  readonly todoForm = form(
+    this.draftModel,
+    (schema) => {
+      required(schema.title, { message: 'Task title is required' });
+    },
+    {
+      submission: {
+        action: async () => {
+          await this.handleSubmit();
+        },
+      },
+    },
+  );
   readonly editingId = signal<number | null>(null);
 
-  readonly remainingCount = computed(() => this.todos().filter((todo) => !todo.completed).length);
-  readonly completedCount = computed(() => this.todos().filter((todo) => todo.completed).length);
+  readonly remainingCount = computed<number>(
+    () => this.todos().filter((todo) => !todo.completed).length,
+  );
+  readonly completedCount = computed<number>(
+    () => this.todos().filter((todo) => todo.completed).length,
+  );
 
-  handleSubmit(event: Event): void {
-    event.preventDefault();
+  private async handleSubmit() {
+    const trimmed = this.todoForm.title().value().trim();
 
-    submit(this.todoForm, async () => {
-      const trimmed = this.todoForm.title().value().trim();
+    if (!trimmed) {
+      return;
+    }
 
-      if (!trimmed) {
-        return;
-      }
+    const currentEditId = this.editingId();
 
-      const currentEditId = this.editingId();
+    if (currentEditId !== null) {
+      this.todos.update((items) =>
+        items.map((item) => (item.id === currentEditId ? { ...item, title: trimmed } : item)),
+      );
+      this.editingId.set(null);
+    } else {
+      const nextTodo: TodoItem = {
+        id: Date.now() + Math.floor(Math.random() * 1000),
+        title: trimmed,
+        completed: false,
+        createdAt: Date.now(),
+      };
 
-      if (currentEditId !== null) {
-        this.todos.update((items) =>
-          items.map((item) => (item.id === currentEditId ? { ...item, title: trimmed } : item)),
-        );
-        this.editingId.set(null);
-      } else {
-        const nextTodo: TodoItem = {
-          id: Date.now() + Math.floor(Math.random() * 1000),
-          title: trimmed,
-          completed: false,
-          createdAt: Date.now(),
-        };
+      this.todos.update((items) => [nextTodo, ...items]);
+    }
 
-        this.todos.update((items) => [nextTodo, ...items]);
-      }
+    this.draftModel.update((model) => ({
+      title: '',
+    }));
 
-      this.todoForm.title.set('');
-    });
+    this.todoForm().reset();
   }
 
   toggleTodo(id: number): void {
@@ -149,12 +163,12 @@ export class TodoDemoPage {
     }
 
     this.editingId.set(id);
-    this.todoForm.title.set(todo.title);
+    this.draftModel.update((draft) => ({ title: todo.title }));
   }
 
   cancelEdit(): void {
     this.editingId.set(null);
-    this.todoForm.title.set('');
+    this.draftModel.update((draft) => ({ title: '' }));
   }
 
   deleteTodo(id: number): void {
