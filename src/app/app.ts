@@ -1,14 +1,12 @@
-import { Component, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet],
   template: `
-    <h1>Angular AI Q3 2026</h1>
-    <p>
-      Reference <code>README.md</code> for info on Angular's integrations with Skills and info about
-      the Angular CLI MCP Server.
-    </p>
+    <router-outlet />
   `,
 })
 export class App {}
