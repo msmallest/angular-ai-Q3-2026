@@ -1,7 +1,5 @@
 <mat-form-field>
-  <mat-label>Phone number</mat-label>
-  <example-tel-input [formField]="form.tel"></example-tel-input>
-  <mat-icon matSuffix>phone</mat-icon>
-  <mat-hint>Include area code</mat-hint>
+  <mat-label>Name</mat-label>
+  <example-name-input [formField]="form.name" />
 </mat-form-field>
-<p>Entered value: {{form.tel().value() | json}}</p>
+<p>Entered value: {{ form.name().value() | json }}</p>
